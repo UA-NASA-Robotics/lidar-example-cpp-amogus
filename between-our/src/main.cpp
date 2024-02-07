@@ -19,9 +19,9 @@
 using namespace gameEngine::ui;
 using namespace gameEngine;
 
-char comPort[] = "COM5";
+char comPort[] = "COM5"; // Change this if you want to use a different USB port
 char* port = comPort;
-SerialPort mySerial(port, CBR_115200);
+SerialPort mySerial(port, CBR_115200); // Declare serial port
 
 TextInput nameInput(Pointf(-1920 / 4 + 30, 1080 / 4 - 50), "Enter name");
 const char* nameInputVal = " ";
@@ -70,6 +70,7 @@ Pointf toPointf(PolarPointf p) {
 	return toPointf(p.r, p.theta);
 }
 
+// Unused function to remove wall data
 void processFrame(int distances[NUM_POINTS]) {
 	std::cout << "Processing frame" << std::endl;
 	Pointf p[NUM_POINTS];
@@ -99,29 +100,37 @@ void processFrame(int distances[NUM_POINTS]) {
 	}
 }
 
+// Read a single packet and update point data
 void readSerial() {
-	if (!mySerial.isConnected() || !mySerial.isAvailable()) return;
+	if (!mySerial.isConnected() || !mySerial.isAvailable()) return; // Instantly quit if serial isn't available or connected
 
-	char* buffer = mySerial.read();
+	char* buffer = mySerial.read(); // Read serial data, check SerialPort.cpp for how that works
 
-	if (buffer == nullptr) return;
+	if (buffer == nullptr) return; // Check if error happened while reading data
 
 	unsigned char b = buffer[0];
+	// Start byte is always hex FA (which can be 0xfa in C++) which is equivalent to 1111 1100 in binary
+	// Return if the first byte read is not the start byte
 	if (b != 0xfa) return;
+
+	// Continue if start byte is correct
 
 	unsigned char data[PACKET_LENGTH];
 	int i = 1;
 	data[0] = b;
 
+	// Loop through and read serial until the whole packet is read
 	while (i < PACKET_LENGTH) {
-		if (!mySerial.isAvailable()) continue;
-		char* temp = mySerial.read();
-		if (temp == nullptr) return;
+		if (!mySerial.isAvailable()) continue; // Wait until a byte is available to read
+		char* temp = mySerial.read(); // Read serial, more in SerialPort.cpp
+		if (temp == nullptr) continue; // If no data is return, retry
+		// Assign read byte into our data array (add 255 to because unsigned -> signed data conversion can be funky)
 		data[i] = temp[0] + 256;
 		i++;
 	}
 
-	int index = int(data[1]) - 0xa0;
+	int index = int(data[1]) - 0xa0; // Index represents the angle of the data / 4
+	// (So if index = 0, angles would be 0 deg to 3 deg, index 89 would be angles 356 deg to 359 deg)
 
 	/*if (index == 0) {
 		threads[2] = std::async(std::launch::async, processFrame, distances);

@@ -7,7 +7,7 @@ SerialPort::SerialPort(char* portName, DWORD baudRate) {
 	connected = false;
 
 	handleToCOM = CreateFileA(static_cast<LPCSTR>(portName), GENERIC_READ | GENERIC_WRITE, 
-		0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+		0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL); // Assign it is a file... idk what half this stuff does
 
 	DWORD errorMsg = GetLastError();
 
@@ -20,6 +20,7 @@ SerialPort::SerialPort(char* portName, DWORD baudRate) {
 		return;
 	}
 	else if (errorMsg != 0) {
+		// Any other error not caught by other error handlers
 		printf("Error.\n");
 		return;
 	}
@@ -43,7 +44,7 @@ SerialPort::SerialPort(char* portName, DWORD baudRate) {
 	}
 
 	connected = true;
-	PurgeComm(handleToCOM, PURGE_RXCLEAR | PURGE_TXCLEAR);
+	PurgeComm(handleToCOM, PURGE_RXCLEAR | PURGE_TXCLEAR); // Clear all previously saved serial data
 	Sleep(2000);
 }
 
@@ -62,15 +63,18 @@ bool SerialPort::isAvailable() {
 char* SerialPort::read() {
 	ClearCommError(handleToCOM, &errors, &status);
 
-	char buffer[1];
-	DWORD bytesRead;
+	char buffer[1]; // Buffer to assign read byte(s) to
+	DWORD bytesRead; // Number representing number of bytes succesfully read
 
+	// ReadFile reads the handleToCOM and assigns the input number of bytes to read in the buffer array
+	// In this case, I pass 1 byte to be read, so the char buffer is length 1
 	if (ReadFile(handleToCOM, buffer, 1, &bytesRead, NULL)) {
 		//printf("Successfully read");
 		return buffer;
 	}
 	else {
 		//printf("Failed to read");
+		// Return NULL if nothing is read
 		std::cout << GetLastError() << std::endl;
 		return NULL;
 	}

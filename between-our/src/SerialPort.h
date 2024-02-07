@@ -10,16 +10,16 @@
 class SerialPort
 {
 private:
-	HANDLE handleToCOM;
+	HANDLE handleToCOM; // Treat USB port as an io file stream
 	bool connected;
 	COMSTAT status;
 	DWORD errors;
 public:
 	SerialPort(char* portName, DWORD baudRate);
-	~SerialPort();
+	~SerialPort(); // Destructor
 
-	bool isAvailable();
-	char* read();
+	bool isAvailable(); // Returns whether at least 1 byte is readable from the port
+	char* read(); // Returns the byte if isAvailable() returns true
 
 	bool isConnected();
 };
